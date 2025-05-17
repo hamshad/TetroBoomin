@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { Canvas } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import useStore from './store';
 import Grid from './Grid';
 import Piece from './Piece';
@@ -42,37 +43,32 @@ export function MainGame() {
     }
   }, [isPaused, moveDown]);
 
-  // Swipe gestures
+  // Swipe gestures for actions
   const swipeGestures = Gesture.Pan()
     .onEnd((e) => {
       if (isPaused) return;
-      if (e.velocityY < -1000) hold();
-      else if (e.velocityY > 1000) hardDrop();
-      else if (e.velocityX > 1000) rotateCW();
-      else if (e.velocityX < -1000) rotateCCW();
+      if (e.velocityY < -1000) runOnJS(hold)();
+      else if (e.velocityY > 1000) runOnJS(hardDrop)();
+      else if (e.velocityX > 1000) runOnJS(rotateCW)();
+      else if (e.velocityX < -1000) runOnJS(rotateCCW)();
     });
 
-  // Pan gesture for horizontal movement
-  let initialGestureX = 0;
-  let initialPieceX = 0;
+  let previousCellsMoved = 0;
   const panGesture = Gesture.Pan()
-    .onStart((e) => {
-      if (isPaused) return;
-      initialGestureX = e.x;
-      initialPieceX = useStore.getState().currentPiece?.x || 0;
+    .onStart(() => {
+      previousCellsMoved = 0;
     })
     .onUpdate((e) => {
       if (isPaused) return;
-      const deltaX = e.x - initialGestureX;
-      const moveCells = Math.round(deltaX / cellSize);
-      const newX = initialPieceX + moveCells;
-      const clampedX = Math.max(0, Math.min(10 - 4, newX)); // Assuming max piece width is 4
-      if (newX < initialPieceX) moveLeft();
-      else if (newX > initialPieceX) moveRight();
-      useStore.getState().setCurrentPiece({
-        ...useStore.getState().currentPiece!,
-        x: clampedX,
-      });
+      const totalDeltaX = e.translationX;
+      const cellsToMove = Math.round(totalDeltaX / cellSize);
+      const deltaCells = cellsToMove - previousCellsMoved;
+      if (deltaCells > 0) {
+        for (let i = 0; i < deltaCells; i++) runOnJS(moveRight)();
+      } else if (deltaCells < 0) {
+        for (let i = 0; i < -deltaCells; i++) runOnJS(moveLeft)();
+      }
+      previousCellsMoved = cellsToMove;
     });
 
   const composedGestures = Gesture.Simultaneous(swipeGestures, panGesture);

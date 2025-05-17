@@ -57,7 +57,7 @@ const wallKicks: { [key: string]: { [key: string]: [number, number][] } } = {
   },
 };
 
-const useStore = create<State>((set, get) => ({
+const useStore = create<State>()((set, get) => ({
   grid: initialGrid,
   currentPiece: null,
   queue: [],
