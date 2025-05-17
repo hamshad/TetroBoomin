@@ -1,4 +1,4 @@
-import { Group, Rect } from '@shopify/react-native-skia';
+import { Group, Rect, RoundedRect } from '@shopify/react-native-skia';
 import { PIECES } from './pieces';
 import useStore from './store';
 
@@ -16,7 +16,7 @@ export default function Piece({ cellSize, type }: PieceProps) {
   const piece = PIECES.find(p => p.type === currentPiece.type);
   const shape = piece.shapes[currentPiece.rotation];
   const color = piece.color;
-  const opacity = type === 'ghost' ? 0.3 : 1;
+  const opacity = type === 'ghost' ? 0.23 : 1;
 
   // Calculate ghost piece position
   let y = currentPiece.y;
@@ -31,15 +31,39 @@ export default function Piece({ cellSize, type }: PieceProps) {
       {shape.map((row, dy) =>
         row.map((cell, dx) =>
           cell ? (
-            <Rect
-              key={`${dx}-${dy}`}
-              x={(currentPiece.x + dx) * cellSize}
-              y={(y + dy) * cellSize}
-              width={cellSize}
-              height={cellSize}
-              color={color}
-              opacity={opacity}
-            />
+            <Group key={`${dx}-${dy}`}>
+              {/* Shadow/border for block */}
+              <Rect
+                x={(currentPiece.x + dx) * cellSize}
+                y={(y + dy) * cellSize}
+                width={cellSize}
+                height={cellSize}
+                color="#000"
+                opacity={type === 'ghost' ? 0.12 : 0.28}
+                style="stroke"
+                strokeWidth={2}
+              />
+              {/* Main block */}
+              <RoundedRect
+                x={(currentPiece.x + dx) * cellSize + 2}
+                y={(y + dy) * cellSize + 2}
+                width={cellSize - 4}
+                height={cellSize - 4}
+                color={color}
+                opacity={opacity}
+                r={cellSize * 0.20}
+              />
+              {/* Highlight for 3D effect */}
+              <RoundedRect
+                x={(currentPiece.x + dx) * cellSize + 2}
+                y={(y + dy) * cellSize + 2}
+                width={cellSize - 4}
+                height={(cellSize - 4) * 0.43}
+                color="#fff"
+                opacity={type === 'ghost' ? 0.08 : 0.15}
+                r={cellSize * 0.20}
+              />
+            </Group>
           ) : null
         )
       )}
